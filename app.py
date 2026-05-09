@@ -3,31 +3,32 @@ import cv2
 import numpy as np
 import time
 import base64
-import os
+from gtts import gTTS
+import io
 
-# --- 音声再生用の関数 ---
-def play_audio(text):
+def speak(text):
+    """テキストを音声に変換してブラウザで再生する"""
+    tts = gTTS(text=text, lang='ja')
+    fp = io.BytesIO()
+    tts.write_to_fp(fp)
+    fp.seek(0)
+    audio_base64 = base64.b64encode(fp.read()).decode()
+    audio_html = f"""
+        <audio autoplay="true">
+            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+        </audio>
     """
-    ブラウザで音声を自動再生するためのHTMLを生成する
-    ※本来は音声ファイル(mp3等)を用意するのがベストですが、
-    ここでは以前のプロジェクトのように、まずはテキスト表示と擬似再生の枠組みを作ります。
-    もしmp3ファイルがある場合は、そのファイルを読み込む処理に書き換え可能です。
-    """
-    # 今回は簡略化のため、画面に大きくメッセージを出す形式にしています
-    st.markdown(f"### 🔊 {text}")
+    st.components.v1.html(audio_html, height=0)
 
 def main():
-    # ① タイトル
     st.markdown("<h1 style='text-align: center;'>これ、なーんだ</h1>", unsafe_allow_html=True)
 
-    # クイズデータ（画像ファイル名と正解）
     QUIZ_DATA = [
-        {"image": "banana.jpg", "answer": "バナナ"},
-        {"image": "da-papa.jpg", "answer": "パパ"},
-        {"image": "do-oohorisuwan.jpg", "answer": "おおほりこうえん"}
+        {"image": "banana.jpg", "answer": "ばなな"},
+        {"image": "da-papa.jpg", "answer": "おとうさん"},
+        {"image": "do-oohorisuwan.jpg", "answer": "おおほりこうえんのスワン"}
     ]
 
-    # セッション状態の管理
     if 'q_idx' not in st.session_state:
         st.session_state.q_idx = 0
     if 'blur_level' not in st.session_state:
@@ -46,20 +47,19 @@ def main():
         st.session_state.show_ans = False
         st.session_state.blur_level = 100
         
-        # ファイル名による音声（テキスト）の分岐
+        # 音声の分岐
         if filename.startswith("do-"):
-            audio_text = "これどーこだ？"
+            msg = "これどーこだ？"
         elif filename.startswith("da-"):
-            audio_text = "これだーれだ？"
+            msg = "これだーれだ？"
         else:
-            audio_text = "これなーんだ？"
+            msg = "これなーんだ？"
             
-        play_audio(audio_text)
+        # ここで実際に喋ります
+        speak(msg)
 
     # 画像表示エリア
     placeholder = st.empty()
-    
-    # 画像の読み込み
     img = cv2.imread(filename)
     if img is not None:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -67,20 +67,17 @@ def main():
         st.error(f"画像 {filename} が見つかりません。")
         return
 
-    # ③ ぼかしアニメーション（約10秒）
+    # ③ ぼかしアニメーション
     if st.session_state.is_running and st.session_state.blur_level > 1:
         for b in range(st.session_state.blur_level, 0, -2):
             if not st.session_state.is_running:
                 st.session_state.blur_level = b
                 break
-            
             k = b if b % 2 != 0 else b + 1
             processed_img = cv2.GaussianBlur(img, (k, k), 0)
             placeholder.image(processed_img, use_column_width=True)
-            
             st.session_state.blur_level = b
-            time.sleep(0.2) # 0.2秒 × 50回 = 10秒
-            
+            time.sleep(0.15) 
             if b <= 1:
                 st.session_state.is_running = False
     else:
@@ -98,7 +95,6 @@ def main():
 
     if st.session_state.show_ans:
         st.success(f"こたえは： **{current_quiz['answer']}**")
-        
         if st.session_state.q_idx < len(QUIZ_DATA) - 1:
             if st.button("つぎの問題へ"):
                 st.session_state.q_idx += 1
