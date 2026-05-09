@@ -7,18 +7,20 @@ from gtts import gTTS
 import io
 
 def speak(text):
-    """テキストを音声に変換してブラウザで再生する"""
     tts = gTTS(text=text, lang='ja')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
     fp.seek(0)
     audio_base64 = base64.b64encode(fp.read()).decode()
-    audio_html = f"""
-        <audio autoplay="true">
-            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-        </audio>
-    """
+    audio_html = f'<audio autoplay="true"><source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3"></audio>'
     st.components.v1.html(audio_html, height=0)
+
+def apply_mosaic(img, ratio):
+    """画像にモザイクをかける関数 (ratio: 0.01〜1.0)"""
+    h, w = img.shape[:2]
+    # 一度小さくしてから、元のサイズに拡大することでモザイクを作る
+    small = cv2.resize(img, None, fx=ratio, fy=ratio, interpolation=cv2.INTER_NEAREST)
+    return cv2.resize(small, (w, h), interpolation=cv2.INTER_NEAREST)
 
 def main():
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>これ、なーんだ</h1>", unsafe_allow_html=True)
@@ -31,8 +33,8 @@ def main():
 
     if 'q_idx' not in st.session_state:
         st.session_state.q_idx = 0
-    if 'blur_level' not in st.session_state:
-        st.session_state.blur_level = 161
+    if 'mosaic_ratio' not in st.session_state:
+        st.session_state.mosaic_ratio = 0.01  # 1%の粗さから開始
     if 'is_running' not in st.session_state:
         st.session_state.is_running = False
     if 'show_ans' not in st.session_state:
@@ -45,14 +47,9 @@ def main():
     if st.button("はじめる"):
         st.session_state.is_running = True
         st.session_state.show_ans = False
-        st.session_state.blur_level = 161
+        st.session_state.mosaic_ratio = 0.01
         
-        if filename.startswith("do-"):
-            msg = "これどーこだ？"
-        elif filename.startswith("da-"):
-            msg = "これだーれだ？"
-        else:
-            msg = "これなーんだ？"
+        msg = "これどーこだ？" if filename.startswith("do-") else "これだーれだ？" if filename.startswith("da-") else "これなーんだ？"
         speak(msg)
 
     placeholder = st.empty()
@@ -64,40 +61,32 @@ def main():
         st.error(f"画像 {filename} が見つかりません。")
         return
 
-    # ③ ぼかしアニメーション（より細かく、より多く書き換え）
-    if st.session_state.is_running and st.session_state.blur_level > 1:
-        # 161から1まで、あえて「1ずつ」減らすように変更
-        # ループ回数を増やし、待機時間を極めて短くして、じわじわ感を出す
-        for b in range(st.session_state.blur_level, 0, -1):
+    # ③ モザイクアニメーション
+    if st.session_state.is_running and st.session_state.mosaic_ratio < 1.0:
+        # 0.01 (粗い) から 1.0 (鮮明) まで、じわじわ増やす
+        # ステップ数を増やして10秒に調整
+        steps = np.linspace(st.session_state.mosaic_ratio, 1.0, 60) 
+        for r in steps:
             if not st.session_state.is_running:
-                st.session_state.blur_level = b
+                st.session_state.mosaic_ratio = r
                 break
             
-            # ぼかし強度は必ず「奇数」である必要があるため計算
-            k = b if b % 2 != 0 else b + 1
-            processed_img = cv2.GaussianBlur(img, (k, k), 0)
+            mosaic_img = apply_mosaic(img, r)
+            placeholder.image(mosaic_img, use_column_width=True)
             
-            # 画像を表示
-            placeholder.image(processed_img, use_column_width=True)
+            st.session_state.mosaic_ratio = r
+            time.sleep(0.16) # 0.16秒 × 60回 ＝ 約10秒
             
-            st.session_state.blur_level = b
-            # 0.05秒〜0.08秒程度の短い間隔で更新
-            time.sleep(0.06) 
-            
-            if b <= 1:
+            if r >= 1.0:
                 st.session_state.is_running = False
-                st.session_state.blur_level = 1
                 st.rerun()
     else:
-        k = st.session_state.blur_level if st.session_state.blur_level % 2 != 0 else st.session_state.blur_level + 1
-        display_img = cv2.GaussianBlur(img, (k, k), 0) if k > 1 else img
-        
-        # 停止中に再開するための隠しボタン的な役割
-        if st.session_state.blur_level > 1 and not st.session_state.is_running:
+        # 停止中または完了後の表示
+        display_img = apply_mosaic(img, st.session_state.mosaic_ratio)
+        if st.session_state.mosaic_ratio < 1.0 and not st.session_state.is_running:
              if st.button("▶ つづきから動かす", key="resume_img"):
                  st.session_state.is_running = True
                  st.rerun()
-
         placeholder.image(display_img, use_column_width=True)
 
     # ④ 「わかった！」ボタン
@@ -114,7 +103,7 @@ def main():
         if st.session_state.q_idx < len(QUIZ_DATA) - 1:
             if st.button("つぎの問題へ"):
                 st.session_state.q_idx += 1
-                st.session_state.blur_level = 161
+                st.session_state.mosaic_ratio = 0.01
                 st.session_state.show_ans = False
                 st.session_state.is_running = False
                 st.rerun()
@@ -126,4 +115,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
