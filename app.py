@@ -8,7 +8,7 @@ import io
 import random
 
 def speak(text):
-    """音声を再生する"""
+    """音声を再生する関数"""
     tts = gTTS(text=text, lang='ja')
     fp = io.BytesIO()
     tts.write_to_fp(fp)
@@ -18,11 +18,10 @@ def speak(text):
     st.components.v1.html(audio_html, height=0)
 
 def main():
+    # タイトル
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>これ、なーんだ</h1>", unsafe_allow_html=True)
 
-    # クイズデータ（全25問）
-    QUIZ_DATA = [
-    # クイズデータ（全34問に増えました！）
+    # クイズデータ（全34問）
     QUIZ_DATA = [
         {"image": "banana.jpg", "answer": "バナナ"},
         {"image": "da-papa.jpg", "answer": "パパ"},
@@ -58,12 +57,11 @@ def main():
         {"image": "do-jyang2.jpg", "answer": "ジャングリア"},
         {"image": "do-iki1.jpg", "answer": "いき"},
         {"image": "do-inn.jpg", "answer": "インザパーク"}
-    ]    
-    
+    ]
 
-    # セッション状態の初期化
+    # アプリの状態管理（セッション）
     if 'q_idx' not in st.session_state:
-        st.session_state.q_idx = random.randint(0, len(QUIZ_DATA) - 1) # 最初からランダム
+        st.session_state.q_idx = random.randint(0, len(QUIZ_DATA) - 1)
     if 'blur' not in st.session_state:
         st.session_state.blur = 101
     if 'run' not in st.session_state:
@@ -73,55 +71,61 @@ def main():
 
     current = QUIZ_DATA[st.session_state.q_idx]
 
-    # ボタン配置（ひらがなに変更）
+    # 操作ボタン
     col1, col2 = st.columns(2)
     with col1:
         if st.button("はじめる"):
             st.session_state.run = True
             st.session_state.ans = False
             st.session_state.blur = 101
-            msg = "これどーこだ？" if current["image"].startswith("do-") else "これだーれだ？" if current["image"].startswith("da-") else "これなーんだ？"
+            # 音声の出し分け
+            filename = current["image"]
+            msg = "これどーこだ？" if filename.startswith("do-") else "これだーれだ？" if filename.startswith("da-") else "これなーんだ？"
             speak(msg)
     with col2:
         if st.button("わかった！"):
             st.session_state.run = False
 
-    # 画像表示エリア
+    # 画像の表示
     area = st.empty()
-    
     img = cv2.imread(current["image"])
+    
     if img is not None:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    else:
-        st.error(f"画像 {current['image']} が見つかりません")
-        return
-
-    # アニメーション処理
-    if st.session_state.run and st.session_state.blur > 1:
-        for b in range(st.session_state.blur, 0, -1):
-            if not st.session_state.run:
+        
+        # じわじわ変化させる処理
+        if st.session_state.run and st.session_state.blur > 1:
+            for b in range(st.session_state.blur, 0, -1):
+                if not st.session_state.run:
+                    st.session_state.blur = b
+                    break
+                
+                # ぼかしの強さを計算（奇数である必要がある）
+                k = b if b % 2 != 0 else b + 1
+                processed = cv2.GaussianBlur(img, (k, k), 0)
+                area.image(processed, use_column_width=True)
+                
                 st.session_state.blur = b
-                break
-            k = b if b % 2 != 0 else b + 1
-            processed = cv2.GaussianBlur(img, (k, k), 0)
-            area.image(processed, use_column_width=True)
-            st.session_state.blur = b
-            time.sleep(0.1)
-            if b <= 1:
-                st.session_state.run = False
-                st.rerun()
+                time.sleep(0.1) # 10秒かけて鮮明になる設定
+                
+                if b <= 1:
+                    st.session_state.run = False
+                    st.rerun()
+        else:
+            # 停止中または終了後の表示
+            k = st.session_state.blur if st.session_state.blur % 2 != 0 else st.session_state.blur + 1
+            disp = cv2.GaussianBlur(img, (k, k), 0) if k > 1 else img
+            area.image(disp, use_column_width=True)
     else:
-        k = st.session_state.blur if st.session_state.blur % 2 != 0 else st.session_state.blur + 1
-        disp = cv2.GaussianBlur(img, (k, k), 0) if k > 1 else img
-        area.image(disp, use_column_width=True)
+        st.error(f"画像ファイル「{current['image']}」が見つかりません。GitHubにアップロードされているか確認してください。")
 
-    # こたえボタン
+    # こたえ合わせ
     if st.button("こたえ"):
         st.session_state.ans = True
 
     if st.session_state.ans:
         st.markdown(f"<h2 style='text-align: center; color: #E74C3C;'>こたえは： {current['answer']}</h2>", unsafe_allow_html=True)
-        # つぎの問題へボタンもひらがなに変更
+        
         if st.button("つぎのもんだいへ"):
             # 次の問題をランダムに選ぶ
             st.session_state.q_idx = random.randint(0, len(QUIZ_DATA) - 1)
