@@ -19,11 +19,33 @@ def speak(text):
 def main():
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>これ、なーんだ</h1>", unsafe_allow_html=True)
 
-    # クイズデータ
+   # クイズデータ
     QUIZ_DATA = [
         {"image": "banana.jpg", "answer": "バナナ"},
         {"image": "da-papa.jpg", "answer": "パパ"},
-        {"image": "do-oohorisuwan.jpg", "answer": "おおほりこうえん"}
+        {"image": "do-oohorisuwan.jpg", "answer": "おおほりこうえん"},
+        {"image": "azarashi.jpg", "answer": "アザラシ"},
+        {"image": "bus.jpg", "answer": "バス"},
+        {"image": "chikatetsu.jpg", "answer": "ちかてつ"},
+        {"image": "da-dare1.jpg", "answer": "だれ？"},
+        {"image": "da-dare2.jpg", "answer": "だれ？"},
+        {"image": "da-dare3.jpg", "answer": "だれ？"},
+        {"image": "da-dare4.jpg", "answer": "だれ？"},
+        {"image": "da-feretto.jpg", "answer": "フェレット"},
+        {"image": "da-mamatotougo.jpg", "answer": "ママととうご"},
+        {"image": "da-mitsuki.jpg", "answer": "みつき"},
+        {"image": "da-obaketogo.jpg", "answer": "おばけとうご"},
+        {"image": "da-pengintogo.jpg", "answer": "ペンギンとうご"},
+        {"image": "da-surakkusu.jpg", "answer": "スラックスさん"},
+        {"image": "densya.jpg", "answer": "でんしゃ"},
+        {"image": "do-oohoriike.jpg", "answer": "おおほりこうえん"},
+        {"image": "do-uminaka.jpg", "answer": "うみのなかみち"},
+        {"image": "da-fIghtakun.jpg", "answer": "ファイタくん"},
+        {"image": "do-junglia.jpg", "answer": "ジャングリア"},
+        {"image": "da-nasuba.jpg", "answer": "ナスバちゃん"},
+        {"image": "rama.jpg", "answer": "ラマ"},
+        {"image": "da-setsubun.jpg", "answer": "おに"},
+        {"image": "da-tereby.jpg", "answer": "テレビーくん"}
     ]
 
     # セッション状態の初期化
