@@ -22,6 +22,8 @@ def main():
 
     # クイズデータ（全25問）
     QUIZ_DATA = [
+    # クイズデータ（全34問に増えました！）
+    QUIZ_DATA = [
         {"image": "banana.jpg", "answer": "バナナ"},
         {"image": "da-papa.jpg", "answer": "パパ"},
         {"image": "do-oohorisuwan.jpg", "answer": "おおほりこうえん"},
@@ -46,8 +48,18 @@ def main():
         {"image": "da-nasuba.jpg", "answer": "ナスバちゃん"},
         {"image": "rama.jpg", "answer": "ラマ"},
         {"image": "da-setsubun.jpg", "answer": "おに"},
-        {"image": "da-tereby.jpg", "answer": "テレビーくん"}
-    ]
+        {"image": "da-tereby.jpg", "answer": "テレビーくん"},
+        {"image": "da-togobaby.jpg", "answer": "うまれたてとうご"},
+        {"image": "do-kankoku.jpg", "answer": "かんこく"},
+        {"image": "do-malinworld.jpg", "answer": "マリンワールド"},
+        {"image": "do-hachirogaura.jpg", "answer": "かめちゃんいけ"},
+        {"image": "do-zoo.jpg", "answer": "どうぶつえん"},
+        {"image": "do-doko1.jpg", "answer": "どこ？"},
+        {"image": "do-jyang2.jpg", "answer": "ジャングリア"},
+        {"image": "do-iki1.jpg", "answer": "いき"},
+        {"image": "do-inn.jpg", "answer": "インザパーク"}
+    ]    
+    
 
     # セッション状態の初期化
     if 'q_idx' not in st.session_state:
