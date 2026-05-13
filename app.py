@@ -21,7 +21,7 @@ def main():
     # タイトル
     st.markdown("<h1 style='text-align: center; color: #4A90E2;'>これ、なーんだ</h1>", unsafe_allow_html=True)
 
-    # クイズデータ（全34問）
+    # クイズデータ（全35問）
     QUIZ_DATA = [
         {"image": "banana.jpg", "answer": "バナナ"},
         {"image": "da-papa.jpg", "answer": "パパ"},
@@ -56,7 +56,8 @@ def main():
         {"image": "do-doko1.jpg", "answer": "どこ？"},
         {"image": "do-jyang2.jpg", "answer": "ジャングリア"},
         {"image": "do-iki1.jpg", "answer": "いき"},
-        {"image": "do-inn.jpg", "answer": "インザパーク"}
+        {"image": "do-inn.jpg", "answer": "インザパーク"},
+        {"image": "da-hadakatogo.jpg", "answer": "はだかんぼとうご"}
     ]
 
     # アプリの状態管理（セッション）
@@ -86,7 +87,7 @@ def main():
         if st.button("わかった！"):
             st.session_state.run = False
 
-    # 画像の表示
+    # 画像の表示エリア
     area = st.empty()
     img = cv2.imread(current["image"])
     
@@ -100,13 +101,12 @@ def main():
                     st.session_state.blur = b
                     break
                 
-                # ぼかしの強さを計算（奇数である必要がある）
                 k = b if b % 2 != 0 else b + 1
                 processed = cv2.GaussianBlur(img, (k, k), 0)
                 area.image(processed, use_column_width=True)
                 
                 st.session_state.blur = b
-                time.sleep(0.1) # 10秒かけて鮮明になる設定
+                time.sleep(0.1)
                 
                 if b <= 1:
                     st.session_state.run = False
@@ -117,7 +117,7 @@ def main():
             disp = cv2.GaussianBlur(img, (k, k), 0) if k > 1 else img
             area.image(disp, use_column_width=True)
     else:
-        st.error(f"画像ファイル「{current['image']}」が見つかりません。GitHubにアップロードされているか確認してください。")
+        st.error(f"がぞう「{current['image']}」が見つかりません。GitHubを確認してね。")
 
     # こたえ合わせ
     if st.button("こたえ"):
@@ -127,7 +127,6 @@ def main():
         st.markdown(f"<h2 style='text-align: center; color: #E74C3C;'>こたえは： {current['answer']}</h2>", unsafe_allow_html=True)
         
         if st.button("つぎのもんだいへ"):
-            # 次の問題をランダムに選ぶ
             st.session_state.q_idx = random.randint(0, len(QUIZ_DATA) - 1)
             st.session_state.blur = 101
             st.session_state.ans = False
